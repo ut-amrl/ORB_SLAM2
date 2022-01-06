@@ -87,7 +87,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
     try
     {
         cv_ptr = cv_bridge::toCvShare(msg);
-        cout << "after toCvShare" << endl;
+        // cout << "after toCvShare" << endl;
     }
     catch (cv_bridge::Exception& e)
     {
@@ -95,7 +95,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
     mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
-    cout << "after trackMonocular" << endl;
+    // cout << "after trackMonocular" << endl;
 }
 
 

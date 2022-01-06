@@ -18,8 +18,11 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <vector>
+#include <string>
 
 #include "Tracking.h"
+#include "DataGenerator.h"
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
@@ -237,12 +240,12 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
-    cout << "inside grabImageMonocular" << endl;
+    // cout << "inside grabImageMonocular" << endl;
     mImGray = im;
 
     if(mImGray.channels()==3)
     {
-        cout << "channels == 3" << endl;
+        // cout << "channels == 3" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,CV_RGB2GRAY);
         else
@@ -250,22 +253,22 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     }
     else if(mImGray.channels()==4)
     {
-        cout << "channels == 4" << endl;
+        // cout << "channels == 4" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
         else
             cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
     }
-    cout << "after convert to grayscale" << endl;
+    // cout << "after convert to grayscale" << endl;
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
 
-    cout << "after frame" << endl;
+    // cout << "after frame" << endl;
     Track();
-    cout << "after track" << endl;
+    // cout << "after track" << endl;
     return mCurrentFrame.mTcw.clone();
 }
 
@@ -871,6 +874,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
+    // cout << "inside TrackWithMotionMOdel" << endl;
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -896,8 +900,29 @@ bool Tracking::TrackWithMotionModel()
         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR);
     }
 
-    if(nmatches<20)
+   if(nmatches<20)
         return false;
+    
+    if (isOffline) {
+        
+        vector<Feature> features_curr, features_prev;
+        FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
+        FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
+        for (size_t i = 0; i < mCurrentFrame.mvpMapPoints.size(); ++i) {
+            if (mCurrentFrame.mvpMapPoints[i] == nullptr) { continue; }
+             
+            for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
+                if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
+                    features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeysUn[i]);
+                    features_prev.emplace_back(mLastFrame.mvpMapPoints[j]->mnId, mLastFrame.mvKeysUn[j]);
+                }
+            }
+        }
+        featureTrack_curr.features = features_curr;
+        featureTrack_prev.features = features_prev;
+        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(featureTrack_curr.timestamp) + ".txt", ' ');
+        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(featureTrack_prev.timestamp) + ".txt", ' ');
+    }
 
     // Optimize frame pose with all matches
     Optimizer::PoseOptimization(&mCurrentFrame);

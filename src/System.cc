@@ -166,6 +166,10 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
 
 cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
 {
+    // if (isOffline) {cout << "track RGBD offline; results will be dumped to files" << endl; }
+    mpTracker->isOffline = isOffline;
+    mpTracker->mDumpToFilePath = dumpToFilePath;
+
     if(mSensor!=RGBD)
     {
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
@@ -246,7 +250,7 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
             mbDeactivateLocalizationMode = false;
         }
     }
-    cout << "after check mode change"<< endl;
+    // cout << "after check mode change"<< endl;
 
     // Check reset
     {
@@ -257,9 +261,9 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
         mbReset = false;
     }
     }
-    cout << "after check reset" << endl;
+    // cout << "after check reset" << endl;
     cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp);
-    cout << "after grabImageMonocular" << endl;
+    // cout << "after grabImageMonocular" << endl;
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;

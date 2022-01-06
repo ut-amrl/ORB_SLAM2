@@ -121,7 +121,8 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
-
+    bool isOffline = false;
+    std::string dumpToFilePath;
 private:
 
     // Input sensor

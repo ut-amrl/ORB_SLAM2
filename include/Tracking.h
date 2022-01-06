@@ -115,6 +115,8 @@ public:
 
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
+    bool isOffline = false;
+    string mDumpToFilePath;
 
     void Reset();
 
