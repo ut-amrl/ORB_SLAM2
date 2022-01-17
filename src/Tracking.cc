@@ -274,6 +274,11 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 
 void Tracking::Track()
 {
+    // cout << "inside track current frameId " << mCurrentFrame.mnId << ", last frameId " << mLastFrame.mnId << endl;
+    if (mState==LOST) {
+        cout << "state lost at frameId " << mCurrentFrame.mnId << endl;
+    }
+
     if(mState==NO_IMAGES_YET)
     {
         mState = NOT_INITIALIZED;
@@ -286,6 +291,7 @@ void Tracking::Track()
 
     if(mState==NOT_INITIALIZED)
     {
+        // cout << "my state not initialized" << endl;
         if(mSensor==System::STEREO || mSensor==System::RGBD)
             StereoInitialization();
         else
@@ -314,10 +320,12 @@ void Tracking::Track()
 
                 if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
+                    cout << "L321 frameId " << mCurrentFrame.mnId  << endl;
                     bOK = TrackReferenceKeyFrame();
                 }
                 else
                 {
+                    // cout << "L326 frameId " << mCurrentFrame.mnId << endl;
                     bOK = TrackWithMotionModel();
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
@@ -325,13 +333,13 @@ void Tracking::Track()
             }
             else
             {
+                // cout << "L334: mState=" << mState << endl;
                 bOK = Relocalization();
             }
         }
         else
         {
             // Localization Mode: Local Mapping is deactivated
-
             if(mState==LOST)
             {
                 bOK = Relocalization();
@@ -343,11 +351,13 @@ void Tracking::Track()
                     // In last frame we tracked enough MapPoints in the map
 
                     if(!mVelocity.empty())
-                    {
+                    {   
+                        // cout << "case2: modion model frameId mnId " << mCurrentFrame.mnId << endl;
                         bOK = TrackWithMotionModel();
                     }
                     else
                     {
+                        // cout << "case2: ref key frame frameId " << mCurrentFrame.mnId << endl;
                         bOK = TrackReferenceKeyFrame();
                     }
                 }
@@ -366,6 +376,7 @@ void Tracking::Track()
                     cv::Mat TcwMM;
                     if(!mVelocity.empty())
                     {
+                        // cout << "case3 modiotn model frame id " << mCurrentFrame.mnId << endl;
                         bOKMM = TrackWithMotionModel();
                         vpMPsMM = mCurrentFrame.mvpMapPoints;
                         vbOutMM = mCurrentFrame.mvbOutlier;
@@ -893,18 +904,26 @@ bool Tracking::TrackWithMotionModel()
         th=7;
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR);
 
+    int nmatchesThresh = 20;
+    int nmatchesMapThresh = 20;
     // If few matches, uses a wider window search
-    if(nmatches<20)
+    if(nmatches < nmatchesThresh)
     {
         fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR);
     }
 
-   if(nmatches<20)
-        return false;
+   // if(nmatches<20)
+        // return false;
+    // cout << mCurrentFrame.mnId << ", " << nmatches << endl;
+    
+    if (nmatches < nmatchesThresh) {
+        cout << "only found less than " << nmatches << " matches for frame " << mCurrentFrame.mnId << endl;
+        return false; 
+    }
     
     if (isOffline) {
-        
+        // cout << "dumpToFile" << endl;
         vector<Feature> features_curr, features_prev;
         FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
         FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
@@ -913,8 +932,8 @@ bool Tracking::TrackWithMotionModel()
              
             for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
                 if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
-                    features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeysUn[i]);
-                    features_prev.emplace_back(mLastFrame.mvpMapPoints[j]->mnId, mLastFrame.mvKeysUn[j]);
+                    features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeys[i], mCurrentFrame.mvDepth[i], mCurrentFrame.mvuRight[i]);
+                    features_prev.emplace_back(mLastFrame.mvpMapPoints[j]->mnId, mLastFrame.mvKeys[j], mLastFrame.mvDepth[j], mLastFrame.mvuRight[j]);
                 }
             }
         }
@@ -947,14 +966,17 @@ bool Tracking::TrackWithMotionModel()
                 nmatchesMap++;
         }
     }    
-
+    // cout << "before return; nmatches = " << nmatches << ", nmatchesMap = " << nmatchesMap << endl;
     if(mbOnlyTracking)
     {
-        mbVO = nmatchesMap<10;
-        return nmatches>20;
+        mbVO = nmatchesMap<nmatchesMapThresh;
+        // cout << "before return (case1): nmatches = " << nmatches << ", nmatchesMap = " << nmatchesMap << endl;
+        return nmatches>nmatchesThresh;
     }
 
-    return nmatchesMap>=10;
+    // cout << "before return (case2): nmatchesMap = " << nmatchesMap << endl;
+    // cout << (nmatchesMap >= nmatchesMapThresh) << endl;
+    return nmatchesMap>=nmatchesMapThresh;
 }
 
 bool Tracking::TrackLocalMap()
@@ -991,13 +1013,16 @@ bool Tracking::TrackLocalMap()
 
         }
     }
+    // cout << "mnMatchesInliers = " << mnMatchesInliers << endl;
+    int mnMatchesInliersThresh1 = 50; // 50
+    int mnMatchesInliersThresh2 = 30; // 30
 
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
-    if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
+    if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<mnMatchesInliersThresh1)
         return false;
 
-    if(mnMatchesInliers<30)
+    if(mnMatchesInliers<mnMatchesInliersThresh2)
         return false;
     else
         return true;

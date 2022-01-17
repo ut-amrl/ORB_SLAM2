@@ -120,6 +120,8 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
         cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
         exit(-1);
     }   
+    mpTracker->isOffline = isOffline;
+    mpTracker->mDumpToFilePath = dumpToFilePath;
 
     // Check mode change
     {

@@ -89,9 +89,9 @@ add_executable(rgbd_tum
 Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
-add_executable(mytest
-Examples/RGB-D/mytest.cc)
-target_link_libraries(mytest ${PROJECT_NAME})
+add_executable(match_rgbd
+Examples/RGB-D/match_rgbd.cc)
+target_link_libraries(match_rgbd ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
@@ -103,6 +103,9 @@ add_executable(stereo_euroc
 Examples/Stereo/stereo_euroc.cc)
 target_link_libraries(stereo_euroc ${PROJECT_NAME})
 
+add_executable(match_stereo
+Examples/Stereo/match_stereo.cc)
+target_link_libraries(match_stereo ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 

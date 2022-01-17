@@ -16,12 +16,28 @@ namespace ORB_SLAM2 {
 struct Feature {
     long unsigned int mapPointId;
     KeyPoint keyPoint;
-    Feature() {};
-    Feature(long unsigned int mapPointId, KeyPoint keyPoint) : 
-        mapPointId(mapPointId), keyPoint(keyPoint) {};
+    float depth;
+    float uRight;
+    KeyPoint rightKeyPoint;
+    Feature() {
+        uRight = -1;
+    }
+    Feature(long unsigned int mapPointId, KeyPoint keyPoint, float depth) : 
+        mapPointId(mapPointId), keyPoint(keyPoint), depth(depth) {
+        uRight = -1;
+    }
+    Feature(long unsigned int mapPointId, KeyPoint keyPoint, float depth, float uRight) : mapPointId(mapPointId), keyPoint(keyPoint), depth(depth), uRight(uRight) {}
+
 
     string to_str(char delimiter) {
-        return to_string(mapPointId) + delimiter + to_string((float)keyPoint.pt.x) + delimiter + to_string((float)keyPoint.pt.y);
+        string ret = "";
+        ret += to_string(mapPointId) + delimiter + to_string((float)keyPoint.pt.x) + delimiter + to_string((float)keyPoint.pt.y) + delimiter + to_string(depth);
+        if (uRight < 0) {
+            return ret;
+        } else {
+            ret += delimiter + to_string(uRight) + delimiter + to_string((float)keyPoint.pt.y);
+            return ret;
+        }
     }
 };
 
