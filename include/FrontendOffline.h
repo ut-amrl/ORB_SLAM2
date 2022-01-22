@@ -5,8 +5,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include "Converter.h"
-#ifndef DATA_GENERATOR_H
-#define DATA_GENERATOR_H
+#ifndef FRONTENDOFFLINE_H
+#define FRONTENDOFFLINE_H
 
 using namespace std;
 using namespace cv;
@@ -26,7 +26,8 @@ struct Feature {
         mapPointId(mapPointId), keyPoint(keyPoint), depth(depth) {
         uRight = -1;
     }
-    Feature(long unsigned int mapPointId, KeyPoint keyPoint, float depth, float uRight) : mapPointId(mapPointId), keyPoint(keyPoint), depth(depth), uRight(uRight) {}
+    Feature(long unsigned int mapPointId, KeyPoint keyPoint, float depth, float uRight) : 
+        mapPointId(mapPointId), keyPoint(keyPoint), depth(depth), uRight(uRight) {}
 
 
     string to_str(char delimiter) {
@@ -45,12 +46,12 @@ struct FeatureTrack {
     double timestamp;
     long unsigned int frameId;
     // mapPointId, KeyPoint in this->frameId
-    Mat Tcw;
+    Mat pose;
     vector<Feature> features;
 
     FeatureTrack();
-    FeatureTrack(const double timestamp, const long unsigned int frameId, const Mat Tcw) :
-        timestamp(timestamp), frameId(frameId), Tcw(Tcw) {}
+    FeatureTrack(const double timestamp, const long unsigned int frameId, const Mat pose) :
+        timestamp(timestamp), frameId(frameId), pose(pose) {}
 
     void to_file(string path, char delimiter) {
         const size_t dimTranslation = 3, dimRotation = 4;
@@ -62,11 +63,11 @@ struct FeatureTrack {
         }
         // TODO: check for correctness; reference from System.cc:SaveTrajectoryTUM
         ofp << frameId << endl;
-        Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
-        Mat twc = -Tcw.rowRange(0,3).col(3);
-        vector<float> q = Converter::toQuaternion(Rwc);
+        Mat R = pose.rowRange(0,3).colRange(0,3).t();
+        Mat t = -pose.rowRange(0,3).col(3);
+        vector<float> q = Converter::toQuaternion(R);
         ofp << setprecision(3);
-        for (size_t i = 0; i < dimTranslation; ++i) { ofp << twc.at<float>(i) << delimiter; }
+        for (size_t i = 0; i < dimTranslation; ++i) { ofp << t.at<float>(i) << delimiter; }
         for (size_t i = 0; i < dimRotation; ++i) { ofp << q[i] << delimiter; }
         ofp << endl;
         for (Feature feature : features) {
@@ -79,4 +80,4 @@ struct FeatureTrack {
 
 }
 
-#endif // OFFLINE_DATA_GENERATOR
+#endif // FRONTENDOFFLINE_H

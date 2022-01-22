@@ -73,11 +73,19 @@ def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestam
     fp_out.write(frame_pose)
     if fp_depth_out is not None:
         fp_depth_out.write(frame_pose)
+    delimiter = " "
     for feature_id, measurement in features_dict.items():
         if len(measurement) == 2:
-            fp_out.write(str(feature_id+1) + " " + str(measurement[0]) + " " + str(measurement[1]) + "\n")
+            fp_out.write(str(feature_id+1) + delimiter + str(measurement[0]) + delimiter + str(measurement[1]) + "\n")
         else:
-            fp_out.write(str(feature_id+1) + " " + str(measurement[1]) + " " + str(measurement[2]) + " " + str(measurement[3]) + " " + str(measurement[4]) + "\n")
+            # TODO hardcoded for now; need to change into more general formats
+            camera1_id = 1
+            camera2_id = 2
+            str_out = ""
+            str_out += str(feature_id+1) + delimiter
+            str_out += str(camera1_id) + delimiter + str(measurement[1]) + delimiter + str(measurement[2]) + delimiter
+            str_out += str(camera2_id) + delimiter + str(measurement[3]) + delimiter + str(measurement[4]) + "\n"
+            fp_out.write(str_out)
             fp_depth_out.write(str(feature_id+1) + " " + str(measurement[0]) + "\n")
     fp_out.close()
     fp_depth_out.close()
@@ -133,9 +141,9 @@ if __name__ == '__main__':
         fp_out.seek(0)
         fp_out.truncate()
         if camera_type == "stereo":
-            if not os.path.exists(output_path + "features/"):
-                os.makedirs(output_path + "features/")
-            fp_depth_out = open(output_path + "features/" + str(frame_id) + ".txt", "w")
+            if not os.path.exists(output_path + "depths/"):
+                os.makedirs(output_path + "depths/")
+            fp_depth_out = open(output_path + "depths/" + str(frame_id) + ".txt", "w")
             fp_depth_out.seek(0)
             fp_depth_out.truncate()
         else:

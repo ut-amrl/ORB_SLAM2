@@ -40,7 +40,7 @@ if(NOT OpenCV_FOUND)
 endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
-find_package(Pangolin REQUIRED)
+find_package(Pangolin REQUIRED PATHS ~/projects/ )
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -89,9 +89,9 @@ add_executable(rgbd_tum
 Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
-add_executable(match_rgbd
-Examples/RGB-D/match_rgbd.cc)
-target_link_libraries(match_rgbd ${PROJECT_NAME})
+add_executable(mrgbd_tum
+Examples/RGB-D/mrgbd_tum.cc)
+target_link_libraries(mrgbd_tum ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
@@ -103,9 +103,13 @@ add_executable(stereo_euroc
 Examples/Stereo/stereo_euroc.cc)
 target_link_libraries(stereo_euroc ${PROJECT_NAME})
 
-add_executable(match_stereo
-Examples/Stereo/match_stereo.cc)
-target_link_libraries(match_stereo ${PROJECT_NAME})
+add_executable(mstereo_euroc
+Examples/Stereo/mstereo_euroc.cc)
+target_link_libraries(mstereo_euroc ${PROJECT_NAME})
+
+add_executable(mstereo_kitti
+Examples/Stereo/mstereo_kitti.cc)
+target_link_libraries(mstereo_kitti ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
 

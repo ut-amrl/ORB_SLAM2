@@ -22,7 +22,7 @@
 #include <string>
 
 #include "Tracking.h"
-#include "DataGenerator.h"
+#include "FrontendOffline.h"
 
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
@@ -200,9 +200,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
     }
 
     mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-
     Track();
-
     return mCurrentFrame.mTcw.clone();
 }
 
@@ -913,10 +911,6 @@ bool Tracking::TrackWithMotionModel()
         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR);
     }
 
-   // if(nmatches<20)
-        // return false;
-    // cout << mCurrentFrame.mnId << ", " << nmatches << endl;
-    
     if (nmatches < nmatchesThresh) {
         cout << "only found less than " << nmatches << " matches for frame " << mCurrentFrame.mnId << endl;
         return false; 
