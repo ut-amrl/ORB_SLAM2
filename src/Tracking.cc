@@ -916,7 +916,7 @@ bool Tracking::TrackWithMotionModel()
         return false; 
     }
     
-    if (isOffline) {
+    if (0) {
         // cout << "dumpToFile" << endl;
         vector<Feature> features_curr, features_prev;
         FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
@@ -940,6 +940,27 @@ bool Tracking::TrackWithMotionModel()
     // Optimize frame pose with all matches
     Optimizer::PoseOptimization(&mCurrentFrame);
 
+    if (isOffline) {
+        vector<Feature> features_curr, features_prev;
+        FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
+        FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
+        for (size_t i = 0; i < mCurrentFrame.mvpMapPoints.size(); ++i) {
+            if (mCurrentFrame.mvpMapPoints[i] == nullptr) { continue; }
+            if (mCurrentFrame.mvbOutlier[i]) {continue;}
+             
+            for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
+                if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
+                    features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeys[i], mCurrentFrame.mvDepth[i], mCurrentFrame.mvuRight[i]);
+                    features_prev.emplace_back(mLastFrame.mvpMapPoints[j]->mnId, mLastFrame.mvKeys[j], mLastFrame.mvDepth[j], mLastFrame.mvuRight[j]);
+                }
+            }
+        }
+        featureTrack_curr.features = features_curr;
+        featureTrack_prev.features = features_prev;
+        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(featureTrack_curr.timestamp) + ".txt", ' ');
+        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(featureTrack_prev.timestamp) + ".txt", ' ');
+    }
+
     // Discard outliers
     int nmatchesMap = 0;
     for(int i =0; i<mCurrentFrame.N; i++)
@@ -959,7 +980,7 @@ bool Tracking::TrackWithMotionModel()
             else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
                 nmatchesMap++;
         }
-    }    
+    }
     // cout << "before return; nmatches = " << nmatches << ", nmatchesMap = " << nmatchesMap << endl;
     if(mbOnlyTracking)
     {

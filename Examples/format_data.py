@@ -1,6 +1,7 @@
 import os
 import sys, getopt
 from collections import defaultdict
+from scipy.spatial.transform import Rotation as R
 
 
 def add_to_features_mono(features_dict, line):
@@ -46,10 +47,40 @@ def associate_odom_TUM(dataset_path, timestamp):
             return time,odom
     return None
 
-def associate_odom(dataset_path, timestamp, which_dataset="TUM"):
-    return associate_odom_TUM(dataset_path, timestamp)
+def associate_odom_KITTI(dataset_path, timestamp_idx, seqno):
+    if seqno < 10:
+        fp_odom = open(dataset_path + "poses/0" + str(seqno) + ".txt")
+    else:
+        fp_odom = open(dataset_path + "poses/" + str(seqno) + ".txt")
+    lines = fp_odom.readlines()
+    line = lines[timestamp_idx]
+    tokens = line.split()
+    odom = []
+    for token in tokens:
+        odom.append(float(token))
+    rotation = R.from_matrix([[odom[0], odom[1], odom[2]], 
+                              [odom[4], odom[5], odom[6]], 
+                              [odom[8], odom[9], odom[10]] ]).as_quat()
+    translation = [odom[3], odom[7], odom[11]]
+    odom = str(translation[0])
+    for t in translation[1:]:
+        odom = odom + " " + str(t)
+    for r in rotation:
+        odom = odom + " " + str(r)
+    odom += "\n"
+    fp_odom.close()
+    return odom
+        
 
-def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestamp=None):
+def associate_odom(dataset_path, timestamp, which_dataset="TUM", args=[]):
+    if which_dataset == "TUM":
+        return associate_odom_TUM(dataset_path, timestamp)
+    elif which_dataset == "KITTI":
+        return associate_odom_KITTI(dataset_path, timestamp, args[0])
+    else:
+        return None
+
+def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestamp=None, which_dataset="KITTI"):
     lines_list = []
     for fp in fps_list:
         lines_list.append(fp.readlines())
@@ -68,7 +99,10 @@ def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestam
         if dataset_path == None:
             print("dataset-path is unintialized; exiting")
             exit(1)
-        time, frame_pose = associate_odom(dataset_path, timestamp)
+        if which_dataset == "TUM":
+            time, frame_pose = associate_odom(dataset_path, timestamp)
+        elif which_dataset == "KITTI":
+            frame_pose = associate_odom(dataset_path, int(frame_id), which_dataset=which_dataset, args=[3])
         # print(time , frame_pose)
     fp_out.write(frame_pose)
     if fp_depth_out is not None:
