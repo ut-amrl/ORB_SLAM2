@@ -310,7 +310,6 @@ void Tracking::Track()
         {
             // Local Mapping is activated. This is the normal behaviour, unless
             // you explicitly activate the "only tracking" mode.
-
             if(mState==OK)
             {
                 // Local Mapping might have changed some MapPoints tracked in last frame
@@ -318,12 +317,10 @@ void Tracking::Track()
 
                 if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
-                    cout << "L321 frameId " << mCurrentFrame.mnId  << endl;
                     bOK = TrackReferenceKeyFrame();
                 }
                 else
                 {
-                    // cout << "L326 frameId " << mCurrentFrame.mnId << endl;
                     bOK = TrackWithMotionModel();
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
@@ -331,7 +328,6 @@ void Tracking::Track()
             }
             else
             {
-                // cout << "L334: mState=" << mState << endl;
                 bOK = Relocalization();
             }
         }
@@ -519,7 +515,6 @@ void Tracking::Track()
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState==LOST);
     }
-
 }
 
 
@@ -883,7 +878,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
-    // cout << "inside TrackWithMotionMOdel" << endl;
+    // cout << "inside TrackWithMotionModel" << endl;
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -891,6 +886,14 @@ bool Tracking::TrackWithMotionModel()
     UpdateLastFrame();
 
     mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw);
+    if (0) {
+        cout << "-------------TrackWithMotionModel-----------" << endl;
+        cout << "mLastFrame.mTcw: " << mLastFrame.mTcw << endl;
+        cout << "mCurrentFrame.mTcw: " << mCurrentFrame.mTcw << endl;
+        cout << "mVelocity: " << mVelocity << endl;
+        cout << endl;
+    }
+    
 
     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 

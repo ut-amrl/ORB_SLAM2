@@ -95,9 +95,9 @@ def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestam
     fp_out.write(frame_id)
     if fp_depth_out is not None:
         fp_depth_out.write(frame_id)
-    if timestamp is not None:
-        if dataset_path == None:
-            print("dataset-path is unintialized; exiting")
+    if dataset_path is not None:
+        if timestamp == None:
+            print("timestamp is unintialized; exiting")
             exit(1)
         if which_dataset == "TUM":
             time, frame_pose = associate_odom(dataset_path, timestamp)
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         for filename in filenames:
             fp = open(input_path + filename, "r")
             if fp.closed:
-                print("cannot open file " + dataset_path + filename)
+                print("cannot open file " + dataset_path + filename) # FIXME
             fps_list.append(fp)
         fp_out = open(output_path + str(frame_id) + ".txt", "w")
         fp_out.seek(0)

@@ -63,8 +63,11 @@ struct FeatureTrack {
         }
         // TODO: check for correctness; reference from System.cc:SaveTrajectoryTUM
         ofp << frameId << endl;
-        Mat R = pose.rowRange(0,3).colRange(0,3).t();
-        Mat t = -pose.rowRange(0,3).col(3);
+        // Mat R = pose.rowRange(0,3).colRange(0,3).t();
+        // Mat t = -pose.rowRange(0,3).col(3);
+        // TODO check correctness
+        Mat R = pose.rowRange(0,3).colRange(0,3);
+        Mat t = pose.rowRange(0,3).col(3);
         vector<float> q = Converter::toQuaternion(R);
         ofp << setprecision(3);
         for (size_t i = 0; i < dimTranslation; ++i) { ofp << t.at<float>(i) << delimiter; }
