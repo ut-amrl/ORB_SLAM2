@@ -50,7 +50,7 @@ struct FeatureTrack {
     vector<Feature> features;
 
     FeatureTrack();
-    FeatureTrack(const double timestamp, const long unsigned int frameId, const Mat pose) :
+    FeatureTrack(const double timestamp, const long unsigned int frameId, const Mat& pose) :
         timestamp(timestamp), frameId(frameId), pose(pose) {}
 
     void to_file(string path, char delimiter) {
@@ -58,14 +58,10 @@ struct FeatureTrack {
         ofstream ofp;
         ofp.open(path, ios::trunc);
         if (!ofp.is_open()) {
-            perror("[FeatureTrack] cannot open file");
+            perror(("[FeatureTrack] cannot open file " + path).c_str());
             exit(1);
         }
-        // TODO: check for correctness; reference from System.cc:SaveTrajectoryTUM
         ofp << frameId << endl;
-        // Mat R = pose.rowRange(0,3).colRange(0,3).t();
-        // Mat t = -pose.rowRange(0,3).col(3);
-        // TODO check correctness
         Mat R = pose.rowRange(0,3).colRange(0,3);
         Mat t = pose.rowRange(0,3).col(3);
         vector<float> q = Converter::toQuaternion(R);
@@ -79,6 +75,40 @@ struct FeatureTrack {
         ofp.close();
     }
     
+};
+
+struct MotionTrack {
+    double timestamp; // timestamp correspond to current frame id
+    long unsigned int frameId; // current frame id
+    Mat velocity; // current_pose = velocity * last_pose
+    MotionTrack();
+    MotionTrack(const double timestamp, const long unsigned int frameId, const Mat& velocity) : 
+        timestamp(timestamp), frameId(frameId), velocity(velocity) {}
+    // filename: velocities/<frameId>.txt
+    // format: <frameId> \n <translation quat_rotation> \n matrix.rowRange(0,3).colRange(0,4);
+    void to_file(string path, char delimiter) {
+        const size_t dimTranslation = 3, dimRotation = 4;
+        ofstream ofp;
+        ofp.open(path, ios::trunc);
+        if (!ofp.is_open()) {
+            perror(("[MotionTrack] cannot open file " + path).c_str());
+            exit(1);
+        }
+        Mat R = velocity.rowRange(0,3).colRange(0,3);
+        Mat t = velocity.rowRange(0,3).col(3);
+        vector<float> q = Converter::toQuaternion(R);
+        ofp << setprecision(3);
+        for (size_t i = 0; i < dimTranslation; ++i) { ofp << t.at<float>(i) << delimiter; }
+        for (size_t i = 0; i < dimRotation; ++i) { ofp << q[i] << delimiter; }
+        ofp << endl;
+        for (size_t i = 0; i < 3; ++i) {
+            for (size_t j = 0; j < 4; ++j) {
+                ofp << velocity.at<float>(i,j) << delimiter;
+            }
+        }
+        ofp << endl;
+        ofp.close();
+    }
 };
 
 }

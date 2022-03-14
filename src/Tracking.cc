@@ -238,12 +238,10 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 
 cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 {
-    // cout << "inside grabImageMonocular" << endl;
     mImGray = im;
 
     if(mImGray.channels()==3)
     {
-        // cout << "channels == 3" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,CV_RGB2GRAY);
         else
@@ -251,22 +249,18 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     }
     else if(mImGray.channels()==4)
     {
-        // cout << "channels == 4" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
         else
             cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
     }
-    // cout << "after convert to grayscale" << endl;
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
 
-    // cout << "after frame" << endl;
     Track();
-    // cout << "after track" << endl;
     return mCurrentFrame.mTcw.clone();
 }
 
@@ -343,15 +337,12 @@ void Tracking::Track()
                 if(!mbVO)
                 {
                     // In last frame we tracked enough MapPoints in the map
-
                     if(!mVelocity.empty())
                     {   
-                        // cout << "case2: modion model frameId mnId " << mCurrentFrame.mnId << endl;
                         bOK = TrackWithMotionModel();
                     }
                     else
                     {
-                        // cout << "case2: ref key frame frameId " << mCurrentFrame.mnId << endl;
                         bOK = TrackReferenceKeyFrame();
                     }
                 }
@@ -878,7 +869,6 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
-    // cout << "inside TrackWithMotionModel" << endl;
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -888,12 +878,12 @@ bool Tracking::TrackWithMotionModel()
     mCurrentFrame.SetPose(mVelocity*mLastFrame.mTcw);
     if (0) {
         cout << "-------------TrackWithMotionModel-----------" << endl;
+        cout << "mLastFrame.mnId: " << mLastFrame.mnId << "; mCurrentFrame.mnId: " << mCurrentFrame.mnId << endl;
         cout << "mLastFrame.mTcw: " << mLastFrame.mTcw << endl;
         cout << "mCurrentFrame.mTcw: " << mCurrentFrame.mTcw << endl;
         cout << "mVelocity: " << mVelocity << endl;
         cout << endl;
     }
-    
 
     fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
@@ -919,37 +909,12 @@ bool Tracking::TrackWithMotionModel()
         return false; 
     }
     
-    if (0) {
-        // cout << "dumpToFile" << endl;
-        vector<Feature> features_curr, features_prev;
-        FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
-        FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
-        for (size_t i = 0; i < mCurrentFrame.mvpMapPoints.size(); ++i) {
-            if (mCurrentFrame.mvpMapPoints[i] == nullptr) { continue; }
-             
-            for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
-                if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
-                    features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeys[i], mCurrentFrame.mvDepth[i], mCurrentFrame.mvuRight[i]);
-                    features_prev.emplace_back(mLastFrame.mvpMapPoints[j]->mnId, mLastFrame.mvKeys[j], mLastFrame.mvDepth[j], mLastFrame.mvuRight[j]);
-                }
-            }
-        }
-        featureTrack_curr.features = features_curr;
-        featureTrack_prev.features = features_prev;
-        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(featureTrack_curr.timestamp) + ".txt", ' ');
-        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(featureTrack_prev.timestamp) + ".txt", ' ');
-    }
-
-    // Optimize frame pose with all matches
-    Optimizer::PoseOptimization(&mCurrentFrame);
-
     if (isOffline) {
         vector<Feature> features_curr, features_prev;
         FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
         FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
         for (size_t i = 0; i < mCurrentFrame.mvpMapPoints.size(); ++i) {
             if (mCurrentFrame.mvpMapPoints[i] == nullptr) { continue; }
-            if (mCurrentFrame.mvbOutlier[i]) {continue;}
              
             for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
                 if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
@@ -962,7 +927,13 @@ bool Tracking::TrackWithMotionModel()
         featureTrack_prev.features = features_prev;
         featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(featureTrack_curr.timestamp) + ".txt", ' ');
         featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(featureTrack_prev.timestamp) + ".txt", ' ');
+
+        MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mVelocity);
+        motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
     }
+
+    // Optimize frame pose with all matches
+    Optimizer::PoseOptimization(&mCurrentFrame);
 
     // Discard outliers
     int nmatchesMap = 0;
@@ -984,16 +955,12 @@ bool Tracking::TrackWithMotionModel()
                 nmatchesMap++;
         }
     }
-    // cout << "before return; nmatches = " << nmatches << ", nmatchesMap = " << nmatchesMap << endl;
     if(mbOnlyTracking)
     {
         mbVO = nmatchesMap<nmatchesMapThresh;
-        // cout << "before return (case1): nmatches = " << nmatches << ", nmatchesMap = " << nmatchesMap << endl;
         return nmatches>nmatchesThresh;
     }
 
-    // cout << "before return (case2): nmatchesMap = " << nmatchesMap << endl;
-    // cout << (nmatchesMap >= nmatchesMapThresh) << endl;
     return nmatchesMap>=nmatchesMapThresh;
 }
 
