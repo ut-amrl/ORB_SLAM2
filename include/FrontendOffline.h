@@ -94,6 +94,7 @@ struct MotionTrack {
             perror(("[MotionTrack] cannot open file " + path).c_str());
             exit(1);
         }
+        ofp << frameId << endl;
         Mat R = velocity.rowRange(0,3).colRange(0,3);
         Mat t = velocity.rowRange(0,3).col(3);
         vector<float> q = Converter::toQuaternion(R);

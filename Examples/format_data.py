@@ -80,7 +80,7 @@ def associate_odom(dataset_path, timestamp, which_dataset="TUM", args=[]):
     else:
         return None
 
-def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestamp=None, which_dataset="KITTI"):
+def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestamp=None, which_dataset=""):
     lines_list = []
     for fp in fps_list:
         lines_list.append(fp.readlines())
@@ -125,7 +125,7 @@ def merge_files(fps_list, fp_out, fp_depth_out=None, dataset_path=None, timestam
     fp_depth_out.close()
 
 if __name__ == '__main__':
-    dataset_path = None
+    dataset_path = None # if specified, associate groundtruth poses in dataset with each time frame
     input_path = None
     output_path = None
     camera_type = "stereo"
