@@ -62,8 +62,9 @@ struct FeatureTrack {
             exit(1);
         }
         ofp << frameId << endl;
-        Mat R = pose.rowRange(0,3).colRange(0,3);
-        Mat t = pose.rowRange(0,3).col(3);
+         Mat pose_inv = pose.inv();
+        Mat R = pose_inv.rowRange(0,3).colRange(0,3);
+        Mat t = pose_inv.rowRange(0,3).col(3);
         vector<float> q = Converter::toQuaternion(R);
         ofp << setprecision(3);
         for (size_t i = 0; i < dimTranslation; ++i) { ofp << t.at<float>(i) << delimiter; }
@@ -95,8 +96,9 @@ struct MotionTrack {
             exit(1);
         }
         ofp << frameId << endl;
-        Mat R = velocity.rowRange(0,3).colRange(0,3);
-        Mat t = velocity.rowRange(0,3).col(3);
+        Mat velocity_inv = velocity.inv();
+        Mat R = velocity_inv.rowRange(0,3).colRange(0,3);
+        Mat t = velocity_inv.rowRange(0,3).col(3);
         vector<float> q = Converter::toQuaternion(R);
         ofp << setprecision(3);
         for (size_t i = 0; i < dimTranslation; ++i) { ofp << t.at<float>(i) << delimiter; }
@@ -104,7 +106,7 @@ struct MotionTrack {
         ofp << endl;
         for (size_t i = 0; i < 3; ++i) {
             for (size_t j = 0; j < 4; ++j) {
-                ofp << velocity.at<float>(i,j) << delimiter;
+                ofp << velocity_inv.at<float>(i,j) << delimiter;
             }
         }
         ofp << endl;
