@@ -930,6 +930,34 @@ bool Tracking::TrackWithMotionModel()
 
         MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mVelocity);
         motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
+
+        # if 0
+        Mat R, t, pose;
+        cout << "current frame id: " <<  mCurrentFrame.mnId << endl;
+        cout << "mVelocity: " << mVelocity << endl;
+        cout << "mVelocity inv: " << mVelocity.inv() << endl;
+        pose = mCurrentFrame.mTcw;
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mCurrentFrame.mTcw R: " << R << endl;
+        cout << "mCurrentFrame.mTcw t: " << t << endl;
+        pose = mCurrentFrame.mTcw.inv();
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mCurrentFrame.mTcw inv R: " << R << endl;
+        cout << "mCurrentFrame.mTcw inv t: " << t << endl;
+        pose = mVelocity * mLastFrame.mTcw;
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mVelocity * mLastFrame.mTcw R: " << R << endl;
+        cout << "mVelocity * mLastFrame.mTcw t: " << t << endl;
+        pose = mVelocity.inv() * mLastFrame.mTcw.inv();
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mVelocity * mLastFrame.mTcw inv R: " << R << endl;
+        cout << "mVelocity * mLastFrame.mTcw inv t: " << t << endl;
+        cout << endl;
+        # endif
     }
 
     // Optimize frame pose with all matches
