@@ -54,16 +54,19 @@ class LoopClosing;
 class System;
 
 class Tracking
-{  
+{
 
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
              KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
-    cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
+    cv::Mat GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight,
+                            const std::pair<uint32_t, uint32_t> &timestamp);
+
+    cv::Mat GrabImageRGBD(const cv::Mat &imRGB, const cv::Mat &imD, const std::pair<uint32_t, uint32_t> &timestamp);
+
+    cv::Mat GrabImageMonocular(const cv::Mat &im, const std::pair<uint32_t, uint32_t> &timestamp);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
@@ -110,7 +113,7 @@ public:
     // Basically we store the reference keyframe for each frame and its relative transformation
     list<cv::Mat> mlRelativeFramePoses; // taijing: keyframe relative pose, right?
     list<KeyFrame*> mlpReferences;
-    list<double> mlFrameTimes;
+    list<std::pair<uint32_t, uint32_t>> mlFrameTimes;
     list<bool> mlbLost;
 
     // True if local mapping is deactivated and we are performing only localization
@@ -149,6 +152,8 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    void OutputFrameNumTimestampPair(const long unsigned int &frameId, const std::pair<uint32_t, uint32_t> &timestamp);
+
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
     // In that case we are doing visual odometry. The system will try to do relocalization to recover
@@ -174,10 +179,10 @@ protected:
     KeyFrame* mpReferenceKF;
     std::vector<KeyFrame*> mvpLocalKeyFrames;
     std::vector<MapPoint*> mvpLocalMapPoints;
-    
+
     // System
     System* mpSystem;
-    
+
     //Drawers
     Viewer* mpViewer;
     FrameDrawer* mpFrameDrawer;

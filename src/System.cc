@@ -25,6 +25,7 @@
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
+#include <TimestampConversion.h>
 
 namespace ORB_SLAM2
 {
@@ -113,7 +114,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
 
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     if(mSensor!=STEREO)
     {
@@ -166,7 +167,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     return Tcw;
 }
 
-cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp)
+cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     // if (isOffline) {cout << "track RGBD offline; results will be dumped to files" << endl; }
     mpTracker->isOffline = isOffline;
@@ -221,7 +222,7 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return Tcw;
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
+cv::Mat System::TrackMonocular(const cv::Mat &im, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     if(mSensor!=MONOCULAR)
     {
@@ -354,7 +355,7 @@ void System::SaveTrajectoryTUM(const string &filename)
     // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
     // which is true when tracking failed (lbL).
     list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
+    list<std::pair<uint32_t, uint32_t>>::iterator lT = mpTracker->mlFrameTimes.begin();
     list<bool>::iterator lbL = mpTracker->mlbLost.begin();
     for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(),
         lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++, lbL++)
@@ -381,7 +382,7 @@ void System::SaveTrajectoryTUM(const string &filename)
 
         vector<float> q = Converter::toQuaternion(Rwc);
 
-        f << setprecision(6) << *lT << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+        f << setprecision(6) << toDoubleInSeconds(*lT) << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
     }
     f.close();
     cout << endl << "trajectory saved!" << endl;
@@ -415,7 +416,7 @@ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
         cv::Mat R = pKF->GetRotation().t();
         vector<float> q = Converter::toQuaternion(R);
         cv::Mat t = pKF->GetCameraCenter();
-        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
+        f << setprecision(6) << toDoubleInSeconds(pKF->mTimeStamp) << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
           << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
 
     }
@@ -451,7 +452,7 @@ void System::SaveTrajectoryKITTI(const string &filename)
     // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
     // which is true when tracking failed (lbL).
     list<ORB_SLAM2::KeyFrame*>::iterator lRit = mpTracker->mlpReferences.begin();
-    list<double>::iterator lT = mpTracker->mlFrameTimes.begin();
+    list<std::pair<uint32_t, uint32_t>>::iterator lT = mpTracker->mlFrameTimes.begin();
     for(list<cv::Mat>::iterator lit=mpTracker->mlRelativeFramePoses.begin(), lend=mpTracker->mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lT++)
     {
         ORB_SLAM2::KeyFrame* pKF = *lRit;

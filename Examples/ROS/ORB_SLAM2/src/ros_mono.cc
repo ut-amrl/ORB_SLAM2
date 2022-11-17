@@ -94,7 +94,8 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-    mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
+    std::pair<uint32_t, uint32_t> integer_timestamp = std::make_pair(msg->header.stamp.sec, msg->header.stamp.nsec);
+    mpSLAM->TrackMonocular(cv_ptr->image,integer_timestamp);
     // cout << "after trackMonocular" << endl;
 }
 

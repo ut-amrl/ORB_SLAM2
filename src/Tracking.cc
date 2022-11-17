@@ -39,7 +39,7 @@
 #include<iostream>
 
 #include<mutex>
-
+#include <TimestampConversion.h>
 
 using namespace std;
 
@@ -167,7 +167,7 @@ void Tracking::SetViewer(Viewer *pViewer)
 }
 
 
-cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
+cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
@@ -205,7 +205,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
 }
 
 
-cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp)
+cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
@@ -236,7 +236,7 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 }
 
 
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
+cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const std::pair<uint32_t, uint32_t> &timestamp)
 {
     mImGray = im;
 
@@ -925,11 +925,13 @@ bool Tracking::TrackWithMotionModel()
         }
         featureTrack_curr.features = features_curr;
         featureTrack_prev.features = features_prev;
-        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(featureTrack_curr.timestamp) + ".txt", ' ');
-        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(featureTrack_prev.timestamp) + ".txt", ' ');
+        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + ".txt", ' ');
+        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + ".txt", ' ');
 
         MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mVelocity);
         motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
+
+
 
         # if 0
         Mat R, t, pose;
@@ -990,6 +992,11 @@ bool Tracking::TrackWithMotionModel()
     }
 
     return nmatchesMap>=nmatchesMapThresh;
+}
+
+
+void OutputFrameNumTimestampPair(const long unsigned int &frameId, const std::pair<uint32_t, uint32_t> &timestamp) {
+    // TODO!
 }
 
 bool Tracking::TrackLocalMap()

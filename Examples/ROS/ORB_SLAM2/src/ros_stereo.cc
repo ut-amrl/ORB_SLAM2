@@ -155,16 +155,17 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
         return;
     }
 
+    std::pair<uint32_t, uint32_t> integer_timestamp = std::make_pair(msgLeft->header.stamp.sec, msgLeft->header.stamp.nsec);
     if(do_rectify)
     {
         cv::Mat imLeft, imRight;
         cv::remap(cv_ptrLeft->image,imLeft,M1l,M2l,cv::INTER_LINEAR);
         cv::remap(cv_ptrRight->image,imRight,M1r,M2r,cv::INTER_LINEAR);
-        mpSLAM->TrackStereo(imLeft,imRight,cv_ptrLeft->header.stamp.toSec());
+        mpSLAM->TrackStereo(imLeft,imRight,integer_timestamp);
     }
     else
     {
-        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,cv_ptrLeft->header.stamp.toSec());
+        mpSLAM->TrackStereo(cv_ptrLeft->image,cv_ptrRight->image,integer_timestamp);
     }
 
 }

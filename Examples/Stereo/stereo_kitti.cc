@@ -28,6 +28,7 @@
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
+#include <TimestampConversion.h>
 
 using namespace std;
 
@@ -84,7 +85,8 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the images to the SLAM system
-        SLAM.TrackStereo(imLeft,imRight,tframe);
+        std::pair<uint32_t, uint32_t> integer_timestamp = ORB_SLAM2::toTimestampPair(tframe);
+        SLAM.TrackStereo(imLeft,imRight,integer_timestamp);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();

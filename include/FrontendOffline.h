@@ -43,14 +43,14 @@ struct Feature {
 };
 
 struct FeatureTrack {
-    double timestamp;
+    std::pair<uint32_t, uint32_t> timestamp;
     long unsigned int frameId;
     // mapPointId, KeyPoint in this->frameId
     Mat pose;
     vector<Feature> features;
 
     FeatureTrack();
-    FeatureTrack(const double timestamp, const long unsigned int frameId, const Mat& pose) :
+    FeatureTrack(const std::pair<uint32_t, uint32_t> &timestamp, const long unsigned int frameId, const Mat& pose) :
         timestamp(timestamp), frameId(frameId), pose(pose) {}
 
     void to_file(string path, char delimiter) {
@@ -79,11 +79,11 @@ struct FeatureTrack {
 };
 
 struct MotionTrack {
-    double timestamp; // timestamp correspond to current frame id
+    std::pair<uint32_t, uint32_t> timestamp; // timestamp correspond to current frame id
     long unsigned int frameId; // current frame id
     Mat velocity; // current_pose = velocity * last_pose
     MotionTrack();
-    MotionTrack(const double timestamp, const long unsigned int frameId, const Mat& velocity) : 
+    MotionTrack(const std::pair<uint32_t, uint32_t> &timestamp, const long unsigned int frameId, const Mat& velocity) :
         timestamp(timestamp), frameId(frameId), velocity(velocity) {}
     // filename: velocities/<frameId>.txt
     // format: <frameId> \n <translation quat_rotation> \n matrix.rowRange(0,3).colRange(0,4);

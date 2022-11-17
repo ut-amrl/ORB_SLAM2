@@ -108,8 +108,8 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr& msgRGB,const senso
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-
-    mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,cv_ptrRGB->header.stamp.toSec());
+    std::pair<uint32_t, uint32_t> integer_timestamp = std::make_pair(msgRGB->header.stamp.sec, msgRGB->header.stamp.nsec);
+    mpSLAM->TrackRGBD(cv_ptrRGB->image,cv_ptrD->image,integer_timestamp);
 }
 
 

@@ -150,7 +150,8 @@ void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr& msg)
     }
     cv::Mat im = cv_ptr->image.clone();
     cv::Mat imu;
-    cv::Mat Tcw = mpSLAM->TrackMonocular(cv_ptr->image,cv_ptr->header.stamp.toSec());
+    std::pair<uint32_t, uint32_t> integer_timestamp = std::make_pair(msg->header.stamp.sec, msg->header.stamp.nsec);
+    cv::Mat Tcw = mpSLAM->TrackMonocular(cv_ptr->image, integer_timestamp);
     int state = mpSLAM->GetTrackingState();
     vector<ORB_SLAM2::MapPoint*> vMPs = mpSLAM->GetTrackedMapPoints();
     vector<cv::KeyPoint> vKeys = mpSLAM->GetTrackedKeyPointsUn();
