@@ -102,10 +102,10 @@ int main(int argc, char **argv)
     const int nImages = vstrImageLeft.size();
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
+    std::string dumpToFilePath = string(argv[6]);
+    cout << "dumpToFile: " << dumpToFilePath << endl;
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true, dumpToFilePath);
     SLAM.isOffline = true;
-    SLAM.dumpToFilePath = string(argv[6]);
-    cout << "dumpToFile: " << SLAM.dumpToFilePath << endl;
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

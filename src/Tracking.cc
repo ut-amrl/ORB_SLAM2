@@ -40,16 +40,17 @@
 
 #include<mutex>
 #include <TimestampConversion.h>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
 namespace ORB_SLAM2
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor):
+Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Map *pMap, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const std::string &dump_to_file_path):
     mState(NO_IMAGES_YET), mSensor(sensor), mbOnlyTracking(false), mbVO(false), mpORBVocabulary(pVoc),
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
-    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0)
+    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0), mDumpToFilePath(dump_to_file_path)
 {
     // Load camera parameters from settings file
 
@@ -148,7 +149,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
         else
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
-
+    if (!dump_to_file_path.empty()) {
+        InitializeNodeToTimestampFile();
+    }
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -338,7 +341,7 @@ void Tracking::Track()
                 {
                     // In last frame we tracked enough MapPoints in the map
                     if(!mVelocity.empty())
-                    {   
+                    {
                         bOK = TrackWithMotionModel();
                     }
                     else
@@ -560,6 +563,7 @@ void Tracking::StereoInitialization()
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
         mState=OK;
+        OutputFrameNumTimestampPair(mLastFrame.mnId, mLastFrame.mTimeStamp);
     }
 }
 
@@ -635,6 +639,7 @@ void Tracking::MonocularInitialization()
             CreateInitialMapMonocular();
         }
     }
+    OutputFrameNumTimestampPair(mInitialFrame.mnId, mInitialFrame.mTimeStamp); // TODO is this right?
 }
 
 void Tracking::CreateInitialMapMonocular()
@@ -906,16 +911,16 @@ bool Tracking::TrackWithMotionModel()
 
     if (nmatches < nmatchesThresh) {
         cout << "only found less than " << nmatches << " matches for frame " << mCurrentFrame.mnId << endl;
-        return false; 
+        return false;
     }
-    
-    if (isOffline) {
+
+    if (!mDumpToFilePath.empty()) {
         vector<Feature> features_curr, features_prev;
         FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
         FeatureTrack featureTrack_prev(mLastFrame.mTimeStamp, mLastFrame.mnId, mLastFrame.mTcw);
         for (size_t i = 0; i < mCurrentFrame.mvpMapPoints.size(); ++i) {
             if (mCurrentFrame.mvpMapPoints[i] == nullptr) { continue; }
-             
+
             for (size_t j = 0; j < mLastFrame.mvpMapPoints.size(); ++j) {
                 if (mCurrentFrame.mvpMapPoints[i] == mLastFrame.mvpMapPoints[j]) {
                     features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeys[i], mCurrentFrame.mvDepth[i], mCurrentFrame.mvuRight[i]);
@@ -925,15 +930,20 @@ bool Tracking::TrackWithMotionModel()
         }
         featureTrack_curr.features = features_curr;
         featureTrack_prev.features = features_prev;
-        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" + to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + ".txt", ' ');
-        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" + to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + ".txt", ' ');
 
         MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mVelocity);
-        motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
+        if (!mDumpToFilePath.empty()) {
+            featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" +
+                                      to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + ".txt", ' ');
+            featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" +
+                                      to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + ".txt", ' ');
+            motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
+            OutputFrameNumTimestampPair(featureTrack_curr.frameId, featureTrack_curr.timestamp);
+        }
 
 
 
-        # if 0
+    # if 0
         Mat R, t, pose;
         cout << "current frame id: " <<  mCurrentFrame.mnId << endl;
         cout << "mVelocity: " << mVelocity << endl;
@@ -995,8 +1005,40 @@ bool Tracking::TrackWithMotionModel()
 }
 
 
-void OutputFrameNumTimestampPair(const long unsigned int &frameId, const std::pair<uint32_t, uint32_t> &timestamp) {
-    // TODO!
+void Tracking::OutputFrameNumTimestampPair(const long unsigned int &frameId,
+                                           const std::pair<uint32_t, uint32_t> &timestamp) {
+    if (!mDumpToFilePath.empty()) {
+        std::string directory_name = mDumpToFilePath + "timestamps/";
+        std::string file_name = directory_name + "node_ids_and_timestamps.txt";
+        std::ofstream csv_file(file_name, std::ios::app);
+
+        writeCommaSeparatedStringsToFile({std::to_string(frameId), std::to_string(timestamp.first),
+                                          std::to_string(timestamp.second)}, csv_file);
+
+        csv_file.close();
+    }
+}
+
+void Tracking::InitializeNodeToTimestampFile() {
+    std::string directory_name = mDumpToFilePath + "timestamps/";
+    boost::filesystem::create_directories(directory_name);
+
+    std::string file_name = directory_name + "node_ids_and_timestamps.txt";
+    std::ofstream csv_file(file_name, std::ios::trunc);
+    writeCommaSeparatedStringsToFile({"node_id", "seconds", "nanoseconds"}, csv_file);
+
+    csv_file.close();
+}
+
+void Tracking::writeCommaSeparatedStringsToFile(const std::vector<std::string> &strings, std::ofstream &file_stream) {
+    for (size_t i = 0; i < strings.size(); i++) {
+        file_stream << strings[i];
+        if (i == (strings.size() - 1)) {
+            file_stream << "\n";
+        } else {
+            file_stream << ", ";
+        }
+    }
 }
 
 bool Tracking::TrackLocalMap()

@@ -58,7 +58,7 @@ class Tracking
 
 public:
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Map* pMap,
-             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor);
+             KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, const std::string &dump_to_file_path);
 
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight,
@@ -152,7 +152,9 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    void InitializeNodeToTimestampFile();
     void OutputFrameNumTimestampPair(const long unsigned int &frameId, const std::pair<uint32_t, uint32_t> &timestamp);
+    void writeCommaSeparatedStringsToFile(const std::vector<std::string> &strings, std::ofstream &file_stream);
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.

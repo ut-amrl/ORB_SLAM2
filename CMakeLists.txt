@@ -46,6 +46,7 @@ endif()
 #find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED PATHS ~/projects/ )
+find_package(Boost COMPONENTS filesystem REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -84,6 +85,7 @@ ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+${Boost_FILESYSTEM_LIBRARY}
 )
 
 # Build examples
