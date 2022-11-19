@@ -48,7 +48,7 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "RGBD");
+    ros::init(argc, argv, "ORB_SLAM2_RGBD");
     ros::start();
 
     if ((argc != 3) && (argc != 4))

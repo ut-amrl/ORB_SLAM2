@@ -52,8 +52,16 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpKeyFrameDB(pKFDB), mpInitializer(static_cast<Initializer*>(NULL)), mpSystem(pSys), mpViewer(NULL),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpMap(pMap), mnLastRelocFrameId(0), mDumpToFilePath(dump_to_file_path)
 {
-    // Load camera parameters from settings file
+    if (!mDumpToFilePath.empty()) {
+        std::stringstream stringstream1;
+        stringstream1 << mDumpToFilePath.back();
+        std::string lastChar = stringstream1.str();
+        if (lastChar != "/") {
+            mDumpToFilePath += "/";
+        }
+    }
 
+    // Load camera parameters from settings file
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
     float fx = fSettings["Camera.fx"];
     float fy = fSettings["Camera.fy"];
@@ -150,7 +158,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             mDepthMapFactor = 1.0f/mDepthMapFactor;
     }
     if (!dump_to_file_path.empty()) {
-        InitializeNodeToTimestampFile();
+        InitializeFiles();
     }
 }
 
@@ -1019,9 +1027,11 @@ void Tracking::OutputFrameNumTimestampPair(const long unsigned int &frameId,
     }
 }
 
-void Tracking::InitializeNodeToTimestampFile() {
+void Tracking::InitializeFiles() {
     std::string directory_name = mDumpToFilePath + "timestamps/";
     boost::filesystem::create_directories(directory_name);
+    std::string velocity_dir_name = mDumpToFilePath + "velocities/";
+    boost::filesystem::create_directories(velocity_dir_name);
 
     std::string file_name = directory_name + "node_ids_and_timestamps.txt";
     std::ofstream csv_file(file_name, std::ios::trunc);

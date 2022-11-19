@@ -152,7 +152,7 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
-    void InitializeNodeToTimestampFile();
+    void InitializeFiles();
     void OutputFrameNumTimestampPair(const long unsigned int &frameId, const std::pair<uint32_t, uint32_t> &timestamp);
     void writeCommaSeparatedStringsToFile(const std::vector<std::string> &strings, std::ofstream &file_stream);
 
