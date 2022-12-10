@@ -211,6 +211,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
     }
 
     mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    OutputFrameNumTimestampPair(mCurrentFrame.mnId, mCurrentFrame.mTimeStamp);
     Track();
     return mCurrentFrame.mTcw.clone();
 }
@@ -277,7 +278,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const std::pair<uint32_t
 
 void Tracking::Track()
 {
-    // cout << "inside track current frameId " << mCurrentFrame.mnId << ", last frameId " << mLastFrame.mnId << endl;
+//    cout << "Inside track -- last frame: "<< mLastFrame.mnId << ", current frame: " << mCurrentFrame.mnId << endl;
     if (mState==LOST) {
         cout << "state lost at frameId " << mCurrentFrame.mnId << endl;
     }
@@ -571,7 +572,6 @@ void Tracking::StereoInitialization()
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
         mState=OK;
-        OutputFrameNumTimestampPair(mLastFrame.mnId, mLastFrame.mTimeStamp);
     }
 }
 
@@ -647,7 +647,6 @@ void Tracking::MonocularInitialization()
             CreateInitialMapMonocular();
         }
     }
-    OutputFrameNumTimestampPair(mInitialFrame.mnId, mInitialFrame.mTimeStamp); // TODO is this right?
 }
 
 void Tracking::CreateInitialMapMonocular()
@@ -792,6 +791,10 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // Discard outliers
     int nmatchesMap = 0;
+
+    vector<Feature> features_curr, features_prev;
+    FeatureTrack featureTrack_curr(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mCurrentFrame.mTcw);
+    FeatureTrack featureTrack_prev(mpReferenceKF->mTimeStamp, mpReferenceKF->mnId, mpReferenceKF->GetPose());
     for(int i =0; i<mCurrentFrame.N; i++)
     {
         if(mCurrentFrame.mvpMapPoints[i])
@@ -806,9 +809,71 @@ bool Tracking::TrackReferenceKeyFrame()
                 pMP->mnLastFrameSeen = mCurrentFrame.mnId;
                 nmatches--;
             }
-            else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0)
+            else if(mCurrentFrame.mvpMapPoints[i]->Observations()>0) {
                 nmatchesMap++;
+                std::vector<MapPoint*> kf_map_points = mpReferenceKF->GetMapPointMatches();
+                for (size_t j = 0; j < kf_map_points.size(); ++j) {
+                    if (mCurrentFrame.mvpMapPoints[i] == kf_map_points[j]) {
+                        features_curr.emplace_back(mCurrentFrame.mvpMapPoints[i]->mnId, mCurrentFrame.mvKeys[i],
+                                                   mCurrentFrame.mvDepth[i], mCurrentFrame.mvuRight[i]);
+                        features_prev.emplace_back(kf_map_points[j]->mnId, mpReferenceKF->mvKeys[j],
+                                                   mpReferenceKF->mvDepth[j], mpReferenceKF->mvuRight[j]);
+                    }
+                }
+            }
         }
+    }
+
+    featureTrack_curr.features = features_curr;
+    featureTrack_prev.features = features_prev;
+
+    if (!mDumpToFilePath.empty()) {
+        // TODO is this right?
+        cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
+        mLastFrame.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
+        mLastFrame.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
+
+        cv::Mat vel_rel_last_pose = mCurrentFrame.mTcw*LastTwc;
+        MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, vel_rel_last_pose);
+
+        featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" +
+                                  to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + "_compare_" +
+                                  to_string(featureTrack_prev.frameId) + ".txt", ' ');
+        featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" +
+                                  to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + "_compare_" +
+                                  to_string(featureTrack_curr.frameId) +".txt", ' ');
+        motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
+
+
+
+
+# if 0
+        Mat R, t, pose;
+        cout << "current frame id: " <<  mCurrentFrame.mnId << endl;
+        cout << "mVelocity: " << mVelocity << endl;
+        cout << "mVelocity inv: " << mVelocity.inv() << endl;
+        pose = mCurrentFrame.mTcw;
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mCurrentFrame.mTcw R: " << R << endl;
+        cout << "mCurrentFrame.mTcw t: " << t << endl;
+        pose = mCurrentFrame.mTcw.inv();
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mCurrentFrame.mTcw inv R: " << R << endl;
+        cout << "mCurrentFrame.mTcw inv t: " << t << endl;
+        pose = mVelocity * mLastFrame.mTcw;
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mVelocity * mLastFrame.mTcw R: " << R << endl;
+        cout << "mVelocity * mLastFrame.mTcw t: " << t << endl;
+        pose = mVelocity.inv() * mLastFrame.mTcw.inv();
+        R = pose.rowRange(0,3).colRange(0,3);
+        t = pose.rowRange(0,3).col(3);
+        cout << "mVelocity * mLastFrame.mTcw inv R: " << R << endl;
+        cout << "mVelocity * mLastFrame.mTcw inv t: " << t << endl;
+        cout << endl;
+# endif
     }
 
     return nmatchesMap>=10;
@@ -942,11 +1007,12 @@ bool Tracking::TrackWithMotionModel()
         MotionTrack motionTrack(mCurrentFrame.mTimeStamp, mCurrentFrame.mnId, mVelocity);
         if (!mDumpToFilePath.empty()) {
             featureTrack_curr.to_file(mDumpToFilePath + to_string(featureTrack_curr.frameId) + "_curr_" +
-                                      to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + ".txt", ' ');
+                                      to_string(toDoubleInSeconds(featureTrack_curr.timestamp)) + "_compare_" +
+                                      to_string(featureTrack_prev.frameId) + ".txt", ' ');
             featureTrack_prev.to_file(mDumpToFilePath + to_string(featureTrack_prev.frameId) + "_prev_" +
-                                      to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + ".txt", ' ');
+                                      to_string(toDoubleInSeconds(featureTrack_prev.timestamp)) + "_compare_" +
+                                      to_string(featureTrack_curr.frameId) +".txt", ' ');
             motionTrack.to_file(mDumpToFilePath + "velocities/" + to_string(motionTrack.frameId) + ".txt", ' ');
-            OutputFrameNumTimestampPair(featureTrack_curr.frameId, featureTrack_curr.timestamp);
         }
 
 
