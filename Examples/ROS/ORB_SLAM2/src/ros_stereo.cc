@@ -53,19 +53,24 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ORB_SLAM2_Stereo");
     ros::start();
 
-    if ((argc != 4) && (argc != 5))
+    if ((argc != 4) && (argc != 5) && (argc != 6))
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings do_rectify <optional output_directory>" << endl;
+        cerr << endl << "Usage: rosrun ORB_SLAM2 Stereo path_to_vocabulary path_to_settings do_rectify <optional output_directory> <do_visualize>" << endl;
         ros::shutdown();
         return 1;
     }
     std::string dumpToFilePath;
-    if (argc == 5) {
+    if (argc >= 5) {
         dumpToFilePath = argv[4];
+    }
+    bool do_visualize = true;
+    if (argc == 6) {
+        stringstream ss_visualize(argv[5]);
+        ss_visualize >> boolalpha >> do_visualize;
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true, dumpToFilePath);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, do_visualize, dumpToFilePath);
 
     ImageGrabber igb(&SLAM);
 
