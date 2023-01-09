@@ -29,7 +29,7 @@ namespace ORB_SLAM2 {
         uint32_t nsec = static_cast<uint32_t>((timestamp_sec - sec) * kNsecInSecond);
         // avoid rounding errors (per ROS header implementation)
         sec += (nsec / 1000000000ul);
-        nsec %= (nsec / 1000000000ul);
+        nsec %= 1000000000ul;
         return std::make_pair(sec, nsec);
     }
 
