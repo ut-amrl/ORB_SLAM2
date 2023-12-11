@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 {
     if(argc != 6)
     {
-        cerr << endl << "Usage: ./stereo_kitti path_to_vocabulary path_to_settings path_to_images seqid path_to_output" << endl;
+        cerr << endl << "Usage: ./stereo_coda path_to_vocabulary path_to_settings path_to_images seqid path_to_output" << endl;
         return 1;
     }
 
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     std::string dumpToFilePath = string(argv[5]);
     cout << "dumpToFile: " << dumpToFilePath << endl;
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, true, dumpToFilePath);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, false, dumpToFilePath);
     SLAM.isOffline = true;
 
     // Vector for tracking time statistics
