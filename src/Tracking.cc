@@ -1152,8 +1152,8 @@ bool Tracking::TrackLocalMap()
         }
     }
     // cout << "mnMatchesInliers = " << mnMatchesInliers << endl;
-    int mnMatchesInliersThresh1 = 50; // 50
-    int mnMatchesInliersThresh2 = 30; // 30
+    int mnMatchesInliersThresh1 = 50; // Taijing: tunable; default - 50
+    int mnMatchesInliersThresh2 = 30; // Taijing: tunable; default - 30
 
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
@@ -1673,7 +1673,7 @@ bool Tracking::Relocalization()
 
 
                 // If the pose is supported by enough inliers stop ransacs and continue
-                if(nGood>=50)
+                if(nGood>=50) // Taijing: tunable; default - 50
                 {
                     bMatch = true;
                     break;
