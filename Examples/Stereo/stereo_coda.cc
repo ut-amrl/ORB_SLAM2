@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     std::string dumpToFilePath = string(argv[5]);
     cout << "dumpToFile: " << dumpToFilePath << endl;
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, false, dumpToFilePath);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO, true, dumpToFilePath);
     SLAM.isOffline = true;
 
     // Vector for tracking time statistics
