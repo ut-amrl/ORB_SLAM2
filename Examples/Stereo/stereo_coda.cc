@@ -32,6 +32,9 @@
 
 using namespace std;
 
+const int kStartFrame = 1250;
+const int kEndFrame = -1;
+
 void LoadImages(const string &dataDir, 
                 const string &seqId,
                 vector<string> &vstrImageLeft,
@@ -72,7 +75,9 @@ int main(int argc, char **argv)
 
     // Main loop
     cv::Mat imLeft, imRight;
-    for(int ni=0; ni<nImages; ni++)
+    int startFrame = kStartFrame;
+    int endFrame = (kEndFrame == -1) ? nImages :kEndFrame; 
+    for(int ni=startFrame; ni<endFrame; ni++)
     {
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],cv::IMREAD_UNCHANGED);
@@ -169,13 +174,7 @@ void LoadImages(const string &dataDir,
 
     for(int i=0; i<nTimes; i++)
     {
-        // stringstream ss;
-        // ss << setfill('0') << setw(6) << i;
-        // vstrImageLeft[i] = strPrefixLeft + ss.str() + ".png";
-        // vstrImageRight[i] = strPrefixRight + ss.str() + ".png";
         vstrImageLeft[i]  = strPrefixLeft + std::to_string(i) + ".jpg";
         vstrImageRight[i] = strPrefixRight + std::to_string(i) + ".jpg";
     }
-    cout << vstrImageLeft[0] << endl;
-    cout << vstrImageLeft[1] << endl;
 }
