@@ -36,11 +36,24 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
 
 int main(int argc, char **argv)
 {
-    if(argc != 5)
+    if((argc != 5) && (argc != 6) && (argc != 7)) 
     {
-        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association" << endl;
+        //                      0          1                  2                3                4                   5                  6
+        cerr << endl << "Usage: ./rgbd_tum path_to_vocabulary path_to_settings path_to_sequence path_to_association <output_directory> <do_visualize>" << endl;
         return 1;
     }
+    std::string dumpToFilePath;
+    if (argc >= 6) {
+        dumpToFilePath = argv[5];
+        cout << "dumpToFilePath: " << dumpToFilePath << endl;
+    }
+    bool do_visualize = true;
+    if (argc >= 7) {
+        stringstream ss_visualize(argv[6]);
+        ss_visualize >> boolalpha >> do_visualize;
+    }
+    cout << "do_visualize: " << do_visualize << endl;
+
 
     // Retrieve paths to images
     vector<string> vstrImageFilenamesRGB;
@@ -63,7 +76,7 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::RGBD,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::RGBD,do_visualize,dumpToFilePath);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
